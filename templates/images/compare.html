@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Compare Images{% endblock %}
+{% block page_title %}Image Comparison{% endblock %}
+{% block content %}
+
+<!-- Select form -->
+<div class="dd-card mb-4">
+  <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-columns me-2 text-primary"></i>Select Images to Compare</h5></div>
+  <div class="dd-card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Image A</label>
+        <select name="a" class="form-select">
+          <option value="">— Select Image A —</option>
+          {% for img in user_images %}
+          <option value="{{ img.pk }}" {% if img_a_id == img.pk|stringformat:"s" %}selected{% endif %}>{{ img.filename }} ({{ img.file_size_display }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Image B</label>
+        <select name="b" class="form-select">
+          <option value="">— Select Image B —</option>
+          {% for img in user_images %}
+          <option value="{{ img.pk }}" {% if img_b_id == img.pk|stringformat:"s" %}selected{% endif %}>{{ img.filename }} ({{ img.file_size_display }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Compare</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if image_a and image_b %}
+
+{% if comparison %}
+<div class="dd-card mb-4">
+  <div class="dd-card-body text-center py-4">
+    {% with sim=comparison.similarity %}
+    <div class="dd-compare-score {% if sim >= 90 %}score-high{% elif sim >= 60 %}score-medium{% else %}score-low{% endif %}">
+      {% if sim is not None %}{{ sim }}%{% else %}N/A{% endif %}
+    </div>
+    <div class="text-muted mt-1 mb-3">Similarity Score</div>
+    {% endwith %}
+
+    {% if comparison.classification == 'exact_duplicate' %}
+      <span class="dd-status-badge badge-exact" style="font-size:.9rem;padding:.5rem 1.25rem"><i class="fas fa-clone me-2"></i>Exact Duplicate</span>
+    {% elif comparison.classification == 'highly_similar' %}
+      <span class="dd-status-badge badge-similar" style="font-size:.9rem;padding:.5rem 1.25rem"><i class="fas fa-equals me-2"></i>Highly Similar</span>
+    {% elif comparison.classification == 'possible_duplicate' %}
+      <span class="dd-status-badge badge-possible" style="font-size:.9rem;padding:.5rem 1.25rem"><i class="fas fa-question me-2"></i>Possible Duplicate</span>
+    {% else %}
+      <span class="dd-status-badge badge-unique" style="font-size:.9rem;padding:.5rem 1.25rem"><i class="fas fa-check me-2"></i>Unique Images</span>
+    {% endif %}
+
+    {% if comparison.similarity is not None %}
+    <div class="dd-sim-bar mt-3" style="max-width:420px;margin:1rem auto 0">
+      <div class="dd-sim-fill {% if comparison.similarity >= 90 %}sim-fill-high{% elif comparison.similarity >= 60 %}sim-fill-medium{% else %}sim-fill-low{% endif %}"
+        style="width:{{ comparison.similarity }}%"></div>
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-center gap-4 mt-3 small text-muted">
+      {% if comparison.same_hash %}<span class="badge bg-danger">SHA-256 Match</span>{% endif %}
+      {% if comparison.hamming_distance is not None %}Hamming distance: <strong>{{ comparison.hamming_distance }}</strong>{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <!-- Image A -->
+  <div class="col-md-6">
+    <div class="dd-compare-panel">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-image me-2 text-primary"></i>Image A</h5></div>
+      {% if image_a.file %}<img src="{{ image_a.file.url }}" class="dd-compare-img" alt="{{ image_a.filename }}">{% endif %}
+      <div class="dd-card-body">
+        <table class="table table-sm mb-0">
+          <tr><th>Filename</th><td class="font-mono">{{ image_a.filename }}</td></tr>
+          <tr><th>Size</th><td>{{ image_a.file_size_display }}</td></tr>
+          <tr><th>Dimensions</th><td>{{ image_a.dimensions }}</td></tr>
+          <tr><th>Uploaded</th><td>{{ image_a.uploaded_at|date:"M d, Y" }}</td></tr>
+          <tr><th>SHA-256</th><td><code style="font-size:.65rem;word-break:break-all">{{ image_a.sha256_hash|slice:":32" }}&hellip;</code></td></tr>
+          <tr><th>pHash</th><td><code>{{ image_a.perceptual_hash|default:"N/A" }}</code></td></tr>
+          <tr><th>Status</th><td>
+            <span class="dd-status-badge badge-{% if image_a.status == 'unique' %}unique{% elif image_a.status == 'exact_duplicate' %}exact{% elif image_a.status == 'highly_similar' %}similar{% else %}possible{% endif %}">{{ image_a.get_status_display }}</span>
+          </td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- Image B -->
+  <div class="col-md-6">
+    <div class="dd-compare-panel">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-image me-2 text-info"></i>Image B</h5></div>
+      {% if image_b.file %}<img src="{{ image_b.file.url }}" class="dd-compare-img" alt="{{ image_b.filename }}">{% endif %}
+      <div class="dd-card-body">
+        <table class="table table-sm mb-0">
+          <tr><th>Filename</th><td class="font-mono">{{ image_b.filename }}</td></tr>
+          <tr><th>Size</th><td>{{ image_b.file_size_display }}</td></tr>
+          <tr><th>Dimensions</th><td>{{ image_b.dimensions }}</td></tr>
+          <tr><th>Uploaded</th><td>{{ image_b.uploaded_at|date:"M d, Y" }}</td></tr>
+          <tr><th>SHA-256</th><td><code style="font-size:.65rem;word-break:break-all">{{ image_b.sha256_hash|slice:":32" }}&hellip;</code></td></tr>
+          <tr><th>pHash</th><td><code>{{ image_b.perceptual_hash|default:"N/A" }}</code></td></tr>
+          <tr><th>Status</th><td>
+            <span class="dd-status-badge badge-{% if image_b.status == 'unique' %}unique{% elif image_b.status == 'exact_duplicate' %}exact{% elif image_b.status == 'highly_similar' %}similar{% else %}possible{% endif %}">{{ image_b.get_status_display }}</span>
+          </td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="dd-empty" style="margin-top:4rem">
+  <div class="dd-empty-icon"><i class="fas fa-columns"></i></div>
+  <h3 class="dd-empty-title">Select Two Images to Compare</h3>
+  <p class="dd-empty-sub">Choose Image A and Image B from the dropdowns above to see a full side-by-side comparison.</p>
+  {% if not user_images %}
+  <a href="{% url 'images:upload' %}" class="btn btn-primary mt-2"><i class="fas fa-cloud-upload-alt me-2"></i>Upload Images First</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

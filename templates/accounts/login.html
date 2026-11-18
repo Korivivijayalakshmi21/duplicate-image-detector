@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | DupliDetect</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root { --primary: #4f46e5; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #4f46e5 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.login-wrap { width: 100%; max-width: 440px; padding: 1.5rem; }
+.login-card {
+  background: #fff; border-radius: 20px; padding: 2.5rem 2rem;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+}
+.login-logo {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--primary), #818cf8);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem; font-size: 2rem; color: white;
+  box-shadow: 0 8px 24px rgba(79,70,229,0.4);
+}
+.login-title { font-size: 1.75rem; font-weight: 800; color: #1e293b; text-align: center; }
+.login-sub { color: #64748b; text-align: center; font-size: 0.9rem; margin-bottom: 1.5rem; }
+.form-label { font-weight: 600; color: #374151; font-size: .875rem; }
+.input-group-text { background: #f8fafc; border-right: none; color: #6b7280; }
+.form-control { border-left: none; }
+.form-control:focus { box-shadow: none; border-color: #d1d5db; }
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control { border-color: var(--primary); }
+.btn-login {
+  background: linear-gradient(135deg, var(--primary), #818cf8);
+  border: none; color: white; font-weight: 700;
+  padding: .75rem; font-size: 1rem; border-radius: 10px; transition: all .3s;
+}
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(79,70,229,.4); color: white; }
+.demo-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: .75rem 1rem; margin-bottom: 1.25rem; font-size: .8rem; color: #166534; }
+.login-footer { text-align: center; margin-top: 1.5rem; color: #94a3b8; font-size: .8rem; }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo"><i class="fas fa-cloud"></i></div>
+    <h1 class="login-title">DupliDetect</h1>
+    <p class="login-sub">Cloud-Based Duplicate Image Detection</p>
+
+    <div class="demo-box">
+      <i class="fas fa-info-circle me-1"></i>
+      <strong>Demo:</strong> username <code>demo</code> / password <code>demo1234</code><br>
+      <small>Run <code>python manage.py load_sample_data</code> to create the demo account.</small>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}info{% endif %} mb-3">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger mb-3">
+        <i class="fas fa-exclamation-circle me-2"></i>{{ form.non_field_errors|first }}
+      </div>
+      {% endif %}
+
+      <div class="mb-3">
+        <label class="form-label" for="id_username">Username</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-user"></i></span>
+          <input type="text" name="username" id="id_username"
+            class="form-control form-control-lg {% if form.username.errors %}is-invalid{% endif %}"
+            placeholder="Enter your username" autofocus
+            value="{{ form.username.value|default:'' }}">
+        </div>
+        {% if form.username.errors %}<div class="text-danger mt-1 small">{{ form.username.errors|first }}</div>{% endif %}
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="id_password">Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-lock"></i></span>
+          <input type="password" name="password" id="id_password"
+            class="form-control form-control-lg {% if form.password.errors %}is-invalid{% endif %}"
+            placeholder="Enter your password">
+        </div>
+        {% if form.password.errors %}<div class="text-danger mt-1 small">{{ form.password.errors|first }}</div>{% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-login w-100">
+        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <i class="fas fa-shield-alt me-1"></i>CSRF Protected &bull; DupliDetect v1.0
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

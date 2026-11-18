@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Upload Images{% endblock %}
+{% block page_title %}Upload Images{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="dd-card">
+      <div class="dd-card-header">
+        <h5 class="dd-card-title"><i class="fas fa-cloud-upload-alt me-2 text-primary"></i>Upload & Analyze Images</h5>
+      </div>
+      <div class="dd-card-body">
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+          {% csrf_token %}
+          <div class="dd-dropzone" id="dropzone">
+            <span class="dd-dropzone-icon"><i class="fas fa-cloud-upload-alt"></i></span>
+            <div class="dd-dropzone-title">Drag &amp; drop images here</div>
+            <p class="dd-dropzone-sub mt-1">or <strong style="color:var(--primary)">click to browse</strong></p>
+            <p class="dd-dropzone-sub text-muted" style="font-size:.8rem">JPG, JPEG, PNG, WEBP &bull; Max 10 MB per file</p>
+            <input type="file" name="images" id="imageUploadInput" multiple accept=".jpg,.jpeg,.png,.webp" class="d-none">
+          </div>
+          <div id="fileList" class="dd-file-list mt-3"></div>
+          <p id="uploadInfo" class="text-muted small d-none mb-2"></p>
+          <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary flex-grow-1" style="padding:.75rem">
+              <i class="fas fa-search me-2"></i>Upload &amp; Analyze
+            </button>
+            <button type="button" class="btn btn-outline-secondary"
+              onclick="document.getElementById('imageUploadInput').value='';document.getElementById('fileList').innerHTML='';document.getElementById('uploadInfo').classList.add('d-none')">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if results %}
+    <div class="dd-card mt-4">
+      <div class="dd-card-header">
+        <h5 class="dd-card-title"><i class="fas fa-poll me-2 text-success"></i>Analysis Results</h5>
+      </div>
+      <table class="dd-table">
+        <thead><tr><th>Filename</th><th>Status</th><th>Detection Method</th><th>Similarity</th><th></th></tr></thead>
+        <tbody>
+          {% for r in results %}
+          <tr>
+            <td class="font-mono" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.filename }}</td>
+            <td>
+              {% if r.success %}
+                {% if r.status == 'unique' %}<span class="dd-status-badge badge-unique"><i class="fas fa-check me-1"></i>Unique</span>
+                {% elif r.status == 'exact_duplicate' %}<span class="dd-status-badge badge-exact"><i class="fas fa-clone me-1"></i>Exact Duplicate</span>
+                {% elif r.status == 'highly_similar' %}<span class="dd-status-badge badge-similar"><i class="fas fa-equals me-1"></i>Highly Similar</span>
+                {% else %}<span class="dd-status-badge badge-possible"><i class="fas fa-question me-1"></i>Possible Duplicate</span>{% endif %}
+              {% else %}<span class="dd-status-badge badge-pending"><i class="fas fa-times me-1"></i>Error</span>{% endif %}
+            </td>
+            <td class="text-muted" style="font-size:.8rem">{% if r.detection_info.method %}{{ r.detection_info.method }}{% else %}&mdash;{% endif %}</td>
+            <td>
+              {% if r.detection_info.similarity is not None %}
+                <strong>{{ r.detection_info.similarity }}%</strong>
+                {% if r.detection_info.hamming_distance is not None %}
+                  <span class="text-muted" style="font-size:.8rem">(d={{ r.detection_info.hamming_distance }})</span>
+                {% endif %}
+              {% else %}&mdash;{% endif %}
+            </td>
+            <td>
+              {% if r.image_id %}<a href="{% url 'images:detail' r.image_id %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    <div class="dd-card mb-3">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-info-circle me-2 text-info"></i>Supported Formats</h5></div>
+      <div class="dd-card-body">
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <span class="badge bg-primary">.JPG</span>
+          <span class="badge bg-primary">.JPEG</span>
+          <span class="badge bg-success">.PNG</span>
+          <span class="badge bg-info">.WEBP</span>
+        </div>
+        <ul class="list-unstyled small text-muted mb-0">
+          <li><i class="fas fa-check text-success me-2"></i>Max 10 MB per file</li>
+          <li><i class="fas fa-check text-success me-2"></i>Multiple files at once</li>
+          <li><i class="fas fa-check text-success me-2"></i>SHA-256 exact detection</li>
+          <li><i class="fas fa-check text-success me-2"></i>pHash visual detection</li>
+          <li><i class="fas fa-check text-success me-2"></i>Auto-grouped duplicates</li>
+        </ul>
+      </div>
+    </div>
+    <div class="dd-card">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-cog me-2"></i>Detection Thresholds</h5></div>
+      <div class="dd-card-body" style="font-size:.875rem">
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Exact Duplicate</span><strong>Distance = 0</strong>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Highly Similar</span><strong>Distance &le; 5</strong>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Possible Duplicate</span><strong>Distance &le; 10</strong>
+        </div>
+        <div class="d-flex justify-content-between py-2">
+          <span class="text-muted">Hash Algorithm</span><strong>pHash 64-bit</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Group #{{ group.pk }}{% endblock %}
+{% block page_title %}Duplicate Group #{{ group.pk }}{% endblock %}
+{% block content %}
+
+<div class="dd-card mb-4">
+  <div class="dd-card-body">
+    <div class="row align-items-center g-3">
+      <div class="col-auto">
+        <span class="badge {% if group.group_type == 'exact' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="font-size:.9rem;padding:.5rem 1rem">
+          {{ group.get_group_type_display }}
+        </span>
+      </div>
+      <div class="col">
+        <h4 class="fw-bold mb-1">Group #{{ group.pk }}</h4>
+        <span class="text-muted small">Created {{ group.created_at|date:"M d, Y H:i" }}</span>
+      </div>
+      <div class="col-auto text-center">
+        <div class="fw-bold" style="font-size:1.5rem;color:var(--success)">{{ group.avg_similarity }}%</div>
+        <div class="text-muted small">Avg Similarity</div>
+      </div>
+      <div class="col-auto text-center">
+        <div class="fw-bold" style="font-size:1.5rem">{{ group.image_count }}</div>
+        <div class="text-muted small">Images</div>
+      </div>
+      <div class="col-auto">
+        <a href="{% url 'images:groups' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dd-image-grid">
+  {% for rel in relations %}
+  <div class="dd-image-card">
+    <div class="dd-thumb-wrap">
+      {% if rel.image.file %}
+      <img src="{{ rel.image.file.url }}" alt="{{ rel.image.filename }}" loading="lazy">
+      {% else %}
+      <div class="d-flex align-items-center justify-content-center h-100 text-muted"><i class="fas fa-image fa-2x"></i></div>
+      {% endif %}
+      {% if rel.similarity_score %}
+      <div class="dd-thumb-badge">
+        <span class="badge bg-dark bg-opacity-75" style="font-size:.7rem">{{ rel.similarity_score }}%</span>
+      </div>
+      {% endif %}
+      <div class="dd-thumb-overlay">
+        <a href="{% url 'images:detail' rel.image.pk %}" class="btn btn-sm btn-light"><i class="fas fa-eye"></i></a>
+        <a href="{% url 'images:compare' %}?a={{ rel.image.pk }}" class="btn btn-sm btn-light"><i class="fas fa-columns"></i></a>
+      </div>
+    </div>
+    <div class="dd-image-info">
+      <div class="dd-image-name" title="{{ rel.image.filename }}">{{ rel.image.filename }}</div>
+      <div class="dd-image-meta">{{ rel.image.file_size_display }}</div>
+      {% if rel.similarity_score %}
+      <div class="dd-sim-bar mt-1">
+        <div class="dd-sim-fill {% if rel.similarity_score >= 90 %}sim-fill-high{% elif rel.similarity_score >= 70 %}sim-fill-medium{% else %}sim-fill-low{% endif %}"
+          style="width:{{ rel.similarity_score }}%"></div>
+      </div>
+      <div class="dd-image-meta">{{ rel.similarity_score }}% &bull; {{ rel.get_detection_type_display }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}{{ image.filename }}{% endblock %}
+{% block page_title %}Image Details{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="dd-card">
+      <div class="dd-card-body p-0">
+        {% if image.file %}
+        <img src="{{ image.file.url }}" alt="{{ image.filename }}"
+          class="w-100" style="border-radius:12px 12px 0 0;max-height:400px;object-fit:contain;background:#f8fafc;padding:1rem">
+        {% else %}
+        <div class="d-flex align-items-center justify-content-center" style="height:300px;background:#f8fafc;border-radius:12px 12px 0 0">
+          <i class="fas fa-image fa-4x text-muted"></i>
+        </div>
+        {% endif %}
+      </div>
+      <div class="dd-card-body pt-3 d-flex gap-2 flex-wrap">
+        <a href="{% url 'images:compare' %}?a={{ image.pk }}" class="btn btn-primary"><i class="fas fa-columns me-2"></i>Compare</a>
+        {% if relations %}
+        <a href="{% url 'images:group_detail' relations.first.duplicate_group.pk %}" class="btn btn-outline-warning"><i class="fas fa-object-group me-2"></i>View Group</a>
+        {% endif %}
+        <form method="post" action="{% url 'images:delete' image.pk %}" class="dd-delete-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash me-2"></i>Delete</button>
+        </form>
+        <a href="{% url 'images:library' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="dd-card mb-3">
+      <div class="dd-card-header">
+        <h5 class="dd-card-title"><i class="fas fa-info-circle me-2 text-primary"></i>Image Metadata</h5>
+        <span class="dd-status-badge badge-{% if image.status == 'unique' %}unique{% elif image.status == 'exact_duplicate' %}exact{% elif image.status == 'highly_similar' %}similar{% else %}possible{% endif %}">
+          {{ image.get_status_display }}
+        </span>
+      </div>
+      <div class="dd-card-body">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr><th style="width:40%">Filename</th><td class="font-mono">{{ image.filename }}</td></tr>
+            <tr><th>File Size</th><td>{{ image.file_size_display }}</td></tr>
+            <tr><th>Dimensions</th><td>{{ image.dimensions }}</td></tr>
+            <tr><th>MIME Type</th><td>{{ image.mime_type }}</td></tr>
+            <tr><th>Uploaded</th><td>{{ image.uploaded_at|date:"M d, Y H:i" }}</td></tr>
+            <tr><th>SHA-256</th><td><code style="font-size:.7rem;word-break:break-all">{{ image.sha256_hash }}</code></td></tr>
+            <tr><th>Perceptual Hash</th><td><code>{{ image.perceptual_hash|default:"N/A" }}</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if relations %}
+    <div class="dd-card">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-object-group me-2 text-warning"></i>Duplicate Group Membership</h5></div>
+      <div class="dd-card-body">
+        {% for rel in relations %}
+        <div class="d-flex align-items-center justify-content-between p-3 border rounded mb-2">
+          <div>
+            <strong>{{ rel.duplicate_group }}</strong>
+            <div class="text-muted small">{{ rel.duplicate_group.get_group_type_display }}</div>
+          </div>
+          <div class="text-end">
+            {% if rel.similarity_score %}<div class="fw-bold" style="color:var(--success)">{{ rel.similarity_score }}%</div>{% endif %}
+            {% if rel.hamming_distance is not None %}<div class="text-muted small">d={{ rel.hamming_distance }}</div>{% endif %}
+            <div class="text-muted small">{{ rel.get_detection_type_display }}</div>
+          </div>
+          <a href="{% url 'images:group_detail' rel.duplicate_group.pk %}" class="btn btn-sm btn-outline-primary">View Group</a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

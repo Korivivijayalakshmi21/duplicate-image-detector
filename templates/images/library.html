@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Image Library{% endblock %}
+{% block page_title %}Image Library{% endblock %}
+{% block content %}
+
+<!-- Search/Filter bar -->
+<div class="dd-card mb-4">
+  <div class="dd-card-body" style="padding:1rem 1.5rem">
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" name="q" id="searchInput" value="{{ search_q }}"
+            class="form-control border-start-0" placeholder="Search by filename...">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select dd-auto-submit">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select name="sort" class="form-select dd-auto-submit">
+          {% for val, label in sort_choices %}
+          <option value="{{ val }}" {% if val == sort %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i>Apply</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <p class="text-muted mb-0">
+    <strong>{{ images|length }}</strong> image(s)
+    {% if search_q %}&mdash; search: &ldquo;<strong>{{ search_q }}</strong>&rdquo;{% endif %}
+    {% if status_filter %}&mdash; filter: <strong>{{ status_filter|title }}</strong>{% endif %}
+  </p>
+  <a href="{% url 'images:upload' %}" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>Upload</a>
+</div>
+
+{% if images %}
+<div class="dd-image-grid">
+  {% for image in images %}
+  <div class="dd-image-card">
+    <div class="dd-thumb-wrap">
+      {% if image.file %}
+        <img src="{{ image.file.url }}" alt="{{ image.filename }}" loading="lazy">
+      {% else %}
+        <div class="d-flex align-items-center justify-content-center h-100 text-muted"><i class="fas fa-image fa-2x"></i></div>
+      {% endif %}
+      <div class="dd-thumb-badge">
+        <span class="dd-status-badge badge-{% if image.status == 'unique' %}unique{% elif image.status == 'exact_duplicate' %}exact{% elif image.status == 'highly_similar' %}similar{% else %}possible{% endif %}" style="font-size:.65rem">
+          {{ image.get_status_display }}
+        </span>
+      </div>
+      <div class="dd-thumb-overlay">
+        <a href="{% url 'images:detail' image.pk %}" class="btn btn-sm btn-light" title="View"><i class="fas fa-eye"></i></a>
+        <a href="{% url 'images:compare' %}?a={{ image.pk }}" class="btn btn-sm btn-light" title="Compare"><i class="fas fa-columns"></i></a>
+        <form method="post" action="{% url 'images:delete' image.pk %}" class="dd-delete-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+        </form>
+      </div>
+    </div>
+    <div class="dd-image-info">
+      <div class="dd-image-name" title="{{ image.filename }}">{{ image.filename }}</div>
+      <div class="dd-image-meta">{{ image.file_size_display }} &bull; {% if image.width %}{{ image.dimensions }}{% else %}?{% endif %}</div>
+      <div class="dd-image-meta">{{ image.uploaded_at|date:"M d, Y" }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if is_paginated %}
+<nav class="mt-4">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_q }}&status={{ status_filter }}&sort={{ sort }}"><i class="fas fa-chevron-left"></i></a></li>
+    {% endif %}
+    <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_q }}&status={{ status_filter }}&sort={{ sort }}"><i class="fas fa-chevron-right"></i></a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="dd-empty">
+  <div class="dd-empty-icon"><i class="fas fa-images"></i></div>
+  <h3 class="dd-empty-title">No Images Found</h3>
+  <p class="dd-empty-sub">
+    {% if search_q or status_filter %}<a href="{% url 'images:library' %}">Clear filters</a> or upload new images.
+    {% else %}Upload images to build your library.{% endif %}
+  </p>
+  <a href="{% url 'images:upload' %}" class="btn btn-primary mt-2"><i class="fas fa-cloud-upload-alt me-2"></i>Upload Images</a>
+</div>
+{% endif %}
+{% endblock %}

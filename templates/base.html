@@ -1,0 +1,116 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}DupliDetect{% endblock %} | Cloud Duplicate Image Detection</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body class="dd-body">
+
+<!-- Sidebar -->
+<nav class="dd-sidebar" id="sidebar">
+  <div class="dd-sidebar-brand">
+    <div class="dd-brand-icon"><i class="fas fa-cloud"></i></div>
+    <div class="dd-brand-text">
+      <span class="dd-brand-name">DupliDetect</span>
+      <span class="dd-brand-sub">Image Intelligence</span>
+    </div>
+  </div>
+
+  <div class="dd-sidebar-user">
+    <div class="dd-user-avatar"><i class="fas fa-user-circle"></i></div>
+    <div class="dd-user-info">
+      <span class="dd-user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+      <span class="dd-user-role">Authenticated User</span>
+    </div>
+  </div>
+
+  <ul class="dd-nav-list">
+    <li class="dd-nav-item">
+      <a href="{% url 'dashboard:home' %}" class="dd-nav-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-chart-pie dd-nav-icon"></i><span>Dashboard</span>
+      </a>
+    </li>
+    <li class="dd-nav-item">
+      <a href="{% url 'images:upload' %}" class="dd-nav-link {% if request.resolver_match.url_name == 'upload' %}active{% endif %}">
+        <i class="fas fa-cloud-upload-alt dd-nav-icon"></i><span>Upload Images</span>
+      </a>
+    </li>
+    <li class="dd-nav-item">
+      <a href="{% url 'images:library' %}" class="dd-nav-link {% if request.resolver_match.url_name == 'library' or request.resolver_match.url_name == 'detail' %}active{% endif %}">
+        <i class="fas fa-images dd-nav-icon"></i><span>Image Library</span>
+      </a>
+    </li>
+    <li class="dd-nav-item">
+      <a href="{% url 'images:groups' %}" class="dd-nav-link {% if request.resolver_match.url_name == 'groups' or request.resolver_match.url_name == 'group_detail' %}active{% endif %}">
+        <i class="fas fa-object-group dd-nav-icon"></i><span>Duplicate Groups</span>
+      </a>
+    </li>
+    <li class="dd-nav-item">
+      <a href="{% url 'images:compare' %}" class="dd-nav-link {% if request.resolver_match.url_name == 'compare' %}active{% endif %}">
+        <i class="fas fa-columns dd-nav-icon"></i><span>Compare Images</span>
+      </a>
+    </li>
+    <li class="dd-nav-item">
+      <a href="{% url 'reports:home' %}" class="dd-nav-link {% if request.resolver_match.namespace == 'reports' %}active{% endif %}">
+        <i class="fas fa-file-alt dd-nav-icon"></i><span>Reports</span>
+      </a>
+    </li>
+  </ul>
+
+  <div class="dd-sidebar-footer">
+    <form method="post" action="{% url 'accounts:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="dd-logout-btn">
+        <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+      </button>
+    </form>
+  </div>
+</nav>
+
+<div class="dd-sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Main content -->
+<div class="dd-main" id="mainContent">
+  <header class="dd-topbar">
+    <div class="dd-topbar-left">
+      <button class="dd-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <h1 class="dd-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+    </div>
+    <div class="dd-topbar-right">
+      <a href="{% url 'images:upload' %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Upload
+      </a>
+      <span class="dd-topbar-user ms-2">
+        <i class="fas fa-user-circle me-1"></i>{{ request.user.username }}
+      </span>
+    </div>
+  </header>
+
+  {% if messages %}
+  <div class="dd-messages px-4 pt-3">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show dd-alert" role="alert">
+      <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'success' %}fa-check-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="dd-content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

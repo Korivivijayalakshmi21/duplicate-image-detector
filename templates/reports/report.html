@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Detection Report{% endblock %}
+{% block page_title %}Detection Report{% endblock %}
+{% block content %}
+
+<!-- Header row -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <p class="text-muted mb-0 small">Generated: {{ generated_at|date:"M d, Y H:i" }}</p>
+  </div>
+  <a href="{% url 'reports:export_csv' %}" class="btn btn-success">
+    <i class="fas fa-download me-2"></i>Export CSV
+  </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="dd-stat-card primary"><div class="dd-stat-icon primary"><i class="fas fa-images"></i></div>
+      <div class="dd-stat-value">{{ total_images }}</div><div class="dd-stat-label">Total Images</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="dd-stat-card success"><div class="dd-stat-icon success"><i class="fas fa-check-circle"></i></div>
+      <div class="dd-stat-value">{{ unique_images }}</div><div class="dd-stat-label">Unique Images</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="dd-stat-card danger"><div class="dd-stat-icon danger"><i class="fas fa-clone"></i></div>
+      <div class="dd-stat-value">{{ all_duplicates }}</div><div class="dd-stat-label">Total Duplicates</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="dd-stat-card orange"><div class="dd-stat-icon orange"><i class="fas fa-percent"></i></div>
+      <div class="dd-stat-value">{{ duplicate_pct }}%</div><div class="dd-stat-label">Duplicate Rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- Savings + Duplicate rate bar -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="dd-card h-100">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-piggy-bank me-2 text-success"></i>Storage Analysis</h5></div>
+      <div class="dd-card-body">
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Storage</span><strong>{{ total_storage }}</strong></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Duplicate Storage</span><strong>{{ duplicate_storage }}</strong></div>
+        <div class="d-flex justify-content-between mb-3"><span class="text-muted">Potential Savings</span><strong class="text-success">{{ potential_savings }}</strong></div>
+        <div class="d-flex justify-content-between mb-1 small"><span>Duplicate Rate</span><span>{{ duplicate_pct }}%</span></div>
+        <div class="progress" style="height:10px;border-radius:5px">
+          <div class="progress-bar bg-danger" style="width:{{ duplicate_pct }}%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="dd-card h-100">
+      <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-chart-bar me-2 text-primary"></i>Breakdown</h5></div>
+      <div class="dd-card-body">
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Exact Duplicates</span><span class="dd-status-badge badge-exact">{{ exact_duplicates }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Highly Similar</span><span class="dd-status-badge badge-similar">{{ highly_similar }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Possible Duplicates</span><span class="dd-status-badge badge-possible">{{ possible_duplicates }}</span></div>
+        <div class="d-flex justify-content-between"><span class="text-muted">Duplicate Groups</span><span class="badge bg-primary">{{ groups|length }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Duplicate Groups Table -->
+{% if groups %}
+<div class="dd-card mb-4">
+  <div class="dd-card-header"><h5 class="dd-card-title"><i class="fas fa-object-group me-2 text-warning"></i>Duplicate Groups</h5></div>
+  <table class="dd-table">
+    <thead>
+      <tr><th>Group ID</th><th>Type</th><th>Images</th><th>Avg Similarity</th><th>Total Size</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for gd in groups %}
+      <tr>
+        <td><strong>#{{ gd.group.pk }}</strong></td>
+        <td>
+          <span class="badge {% if gd.group.group_type == 'exact' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+            {{ gd.group.get_group_type_display }}
+          </span>
+        </td>
+        <td>{{ gd.image_count }}</td>
+        <td>{% if gd.avg_similarity %}{{ gd.avg_similarity }}%{% else %}&mdash;{% endif %}</td>
+        <td>{{ gd.total_size }}</td>
+        <td><a href="{% url 'images:group_detail' gd.group.pk %}" class="btn btn-sm btn-outline-primary">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- All Images Table -->
+<div class="dd-card">
+  <div class="dd-card-header">
+    <h5 class="dd-card-title"><i class="fas fa-list me-2 text-primary"></i>All Images</h5>
+    <span class="badge bg-secondary">{{ total_images }} total</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="dd-table">
+      <thead>
+        <tr><th>Filename</th><th>Status</th><th>Size</th><th>Dimensions</th><th>Uploaded</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for img in all_images %}
+        <tr>
+          <td class="font-mono" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ img.filename }}</td>
+          <td>
+            <span class="dd-status-badge badge-{% if img.status == 'unique' %}unique{% elif img.status == 'exact_duplicate' %}exact{% elif img.status == 'highly_similar' %}similar{% else %}possible{% endif %}">
+              {{ img.get_status_display }}
+            </span>
+          </td>
+          <td>{{ img.file_size_display }}</td>
+          <td>{{ img.dimensions }}</td>
+          <td>{{ img.uploaded_at|date:"M d, Y" }}</td>
+          <td><a href="{% url 'images:detail' img.pk %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

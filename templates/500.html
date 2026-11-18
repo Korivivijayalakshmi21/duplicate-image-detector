@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Server Error{% endblock %}
+{% block page_title %}Server Error{% endblock %}
+{% block content %}
+<div class="dd-empty" style="margin-top:4rem">
+  <div class="dd-empty-icon"><i class="fas fa-exclamation-triangle text-danger"></i></div>
+  <h2 class="dd-empty-title">500 — Something Went Wrong</h2>
+  <p class="dd-empty-sub">An internal error occurred. Please try again or contact support.</p>
+  <a href="{% url 'dashboard:home' %}" class="btn btn-primary mt-3"><i class="fas fa-home me-2"></i>Back to Dashboard</a>
+</div>
+{% endblock %}
